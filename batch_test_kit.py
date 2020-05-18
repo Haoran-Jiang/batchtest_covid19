@@ -34,15 +34,15 @@ def batch_test(subject_list, typeII_error = 0, typeI_error = 0, repeat = 1):
     """
     A function gives the test result for a batch of people. There are steps:
     Step 1: collect all people's sample and pool them together
-    Step 2: do the test over the pooled sample. If the test result is negative, report
-            all testers as negative and quit the function. If the test result is positive
+    Step 2: do the test over the pooled sample. If the (repeated) test result is(are) negative, 
+            report all testers as negative and quit the function. If the test result is positive
     Step 3: do the test over all the individuals and report the result.
     
     Input:
         subject_list(pandas.Series): a pandas.Series contains all subjects' conditions
         typeII_error(float): the prob to predict negative given the positive tester
         typeI_error(float): the prob to predict positive given the negative tester
-        repeat(int): To Do
+        repeat(int): the number of simultaneously pooled sample tests
         
     Output:
         (pandas.Series): a pandas.Series contains the test result for all individuals
@@ -53,7 +53,20 @@ def batch_test(subject_list, typeII_error = 0, typeI_error = 0, repeat = 1):
 
     def repeat_classification(subject,typeII_error, typeI_error, repeat):
         """
-        To do
+        A function gives the simultanous test results for a given subject.
+        If the simultanous results are all negative, then report the subject as negative.
+        Otherwise, report the subject as postive.
+
+        Input:
+            subject(int): 1 stands for postive and 0 stands for negative
+            typeII_error(float): the prob to predict negative given the positive tester (false negative)
+            typeI_error(float): the prob to predict positive given the negative tester (false positive)
+            repeat(int): the number of simultaneously pooled sample tests
+
+
+        Output:
+            (int): test result
+
         """
         subject_repeat = pd.Series(np.repeat(subject, repeat))
         pred_list = subject_repeat.apply(classification, args = (typeII_error, typeI_error))
@@ -105,7 +118,8 @@ def test(subject_list, batch_size, typeII_error = 0, typeI_error = 0, repeat = 1
         batch_size(int): the predetermined batch size
         typeII_error(float): the prob to predict negative given the positive tester
         typeI_error(float): the prob to predict positive given the negative tester
-        repeat(int): 
+        repeat(int): the number of simultaneously pooled sample tests
+
         
     Output:
         (pandas.Series): a pandas.Series contains the test result for all individuals
@@ -233,20 +247,38 @@ def repeat_comparison(repeat_time, batch_size, prevalence_rate,n_population = 20
     df = pd.concat(df_list)
     return df
 
-def one_batch_test_solver(q,n_initial_guess = 2):
+def one_batch_test_solver(prevalence_rate,n_initial_guess = 2):
     
     """
-    To Do
+    A function gives (float) the best batch size for one batch test given the infection rate
+    
+    Inputs:
+        prevalence_rate(float): infection rate
+        n_initial_guess(float): the initial guess 
+
+    Output:
+        (float): the optimal batch size
+
     """
+    q = 1- prevalence_rate # To consistent with the notation of our document
     func = lambda n : n**2*(q ** n) * np.log(q) + 1
     n_solution = fsolve(func, n_initial_guess)
     
-    return [float(n_solution), float(func(n_solution))]
+    return float(n_solution)
 
-def one_batch_test_int_solver(q, n_initial_guess = 2):
+def one_batch_test_int_solver(prevalence_rate, n_initial_guess = 2):
     """
-    To Do
+    A function gives (int) the best batch size for one batch test given the infection rate
+    
+    Inputs:
+        prevalence_rate(float): infection rate
+        n_initial_guess(float): the initial guess 
+
+    Output:
+        (int): the optimal batch size
     """
+
+    q = 1- prevalence_rate # To consistent with the notation of our document
     sol_float = one_batch_test_solver(q, n_initial_guess)[0]
     floor, ceil = np.floor(sol_float), np.ceil(sol_float)
     func = lambda batch_size: 1/batch_size + 1 - q**batch_size
@@ -255,41 +287,57 @@ def one_batch_test_int_solver(q, n_initial_guess = 2):
     else:
         return int(ceil)
     
-def one_batch_test_num(batch_size, q, population = 2000):
+def one_batch_test_num(batch_size, prevalence_rate, population = 2000):
     """
-    To Do
+    A function gives (float) the expectation of total test kits consumptions for one batch test
+    given the batch size, infection rate, and  population
+
+    Inputs:
+        batch_size(float) : the batch size
+        prevalence_rate(float): the infection rate
+        population(float): the population
+
+    Outputs:
+        (float) the total test kits consumptions
+
     """
+    q = 1- prevalence_rate # To consistent with the notation of our document
+
     return float(population * (1/batch_size + 1 - q**batch_size))
 
-def sequential_batch_test_num(batch_size, q, population = 2000):
+def sequential_batch_test_num(batch_size, prevalence_rate , population = 2000):
     """
-    To Do
+    A function gives (float) the expectation of total test kits consumptions for sequential batch test
+    given the batch size, infection rate, and  population
+
+    Inputs:
+        batch_size(float) : the batch size
+        prevalence_rate(float): the infection rate
+        population(float): the population
+
+    Outputs:
+        (float) the total test kits consumptions
     """
+    q = 1- prevalence_rate # To consistent with the notation of our document
+
     return float(population * ((2-q**batch_size)/batch_size + (1 - q**batch_size) ** 2))
 
-def sequential_batch_test_solver(q, n_initial_guess = 2):
+def sequential_batch_test_solver(prevalence_rate, n_initial_guess = 2):
     """
-    To Do
+    A function gives (float) the best batch size for sequential batch test given the infection rate
+    
+    Inputs:
+        prevalence_rate(float): infection rate
+        n_initial_guess(float): the initial guess 
+
+    Output:
+        (float): the optimal batch size
     """
+    q = 1- prevalence_rate # To consistent with the notation of our document
     func = lambda n: -2/n**2 + 1/n**2 * q ** n - 1/n* np.log(q) * q**n + 2*np.log(q)* q ** (2*n) - 2*np.log(q)*q**(n)
     n_solution = fsolve(func, n_initial_guess)
-    return [float(n_solution), float(func(n_solution))]
+    return float(n_solution)
     
-
-def optimal_batch_size(start, end, step_size, method = 'one_batch' ,n_initial_guess = 2):
-    """
-    To Do
-    """
-    q_list = pd.Series(np.arange(start, end, step_size))
-    if method == 'one_batch':
-        temp = q_list.apply(one_batch_test_solver, args = (n_initial_guess,))
-    elif method == 'sequential_batch':
-        temp = q_list.apply(sequential_batch_test_solver, args = (n_initial_guess,))
-    else:
-        raise('Check method')        
-    temp = temp.apply(pd.Series)
-    batch_size, value = temp[0], temp[1]
-    return batch_size, value
 
    
     
