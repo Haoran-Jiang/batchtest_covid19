@@ -247,13 +247,15 @@ def repeat_comparison(repeat_time, batch_size, prevalence_rate,n_population = 20
     df = pd.concat(df_list)
     return df
 
-def one_batch_test_solver(prevalence_rate,n_initial_guess = 2):
+def one_batch_test_solver(prevalence_rate,typeII_error, typeI_error,n_initial_guess = 2):
     
     """
     A function gives (float) the best batch size for one batch test given the infection rate
     
     Inputs:
         prevalence_rate(float): infection rate
+        typeII_error(float): TO DO
+        typeI_error(float):  TO DO
         n_initial_guess(float): the initial guess 
 
     Output:
@@ -261,27 +263,29 @@ def one_batch_test_solver(prevalence_rate,n_initial_guess = 2):
 
     """
     q = 1- prevalence_rate # To consistent with the notation of our document
-    func = lambda n : n**2*(q ** n) * np.log(q) + 1
+    func = lambda n : n*q**(n/2) - (-(1-typeII_error - typeI_error)*np.log(q))**(-1/2)
     n_solution = fsolve(func, n_initial_guess)
     
     return float(n_solution)
 
-def one_batch_test_int_solver(prevalence_rate, n_initial_guess = 2):
+def one_batch_test_int_solver(prevalence_rate,typeII_error, typeI_error, n_initial_guess = 2):
     """
     A function gives (int) the best batch size for one batch test given the infection rate
     
     Inputs:
         prevalence_rate(float): infection rate
         n_initial_guess(float): the initial guess 
+        typeII_error(float): TO DO
+        typeI_error(float):  TO DO
 
     Output:
         (int): the optimal batch size
     """
 
-    q = 1- prevalence_rate # To consistent with the notation of our document
-    sol_float = one_batch_test_solver(q, n_initial_guess)[0]
+    
+    sol_float = one_batch_test_solver(prevalence_rate,typeII_error, typeI_error, n_initial_guess)
     floor, ceil = np.floor(sol_float), np.ceil(sol_float)
-    func = lambda batch_size: 1/batch_size + 1 - q**batch_size
+    func = lambda batch_size: 1/batch_size + 1 - typeII_error -(1 - typeII_error - typeI_error)*(1-prevalence_rate)**batch_size
     if func(floor) < func(ceil):
         return int(floor)
     else:
@@ -339,5 +343,137 @@ def sequential_batch_test_solver(prevalence_rate, n_initial_guess = 2):
     return float(n_solution)
     
 
-   
+def infection_rate_on_negative_batch(p,batch_size,typeII_error, typeI_error):
+    """
+    To DO
+    """
+    q = 1-p
+    r = typeII_error * (1 - q ** batch_size)/((1 - typeI_error) * q ** batch_size + typeII_error *(1 - q**batch_size))
+    return p*r/(1-q**batch_size)
+
+
+def infection_rate_on_positive_batch(p, batch_size, typeII_error, typeI_error):
     
+    """
+    To DO
+    """  
+
+    q = 1-p
+    r = (1 - typeII_error) * (1 - q ** batch_size)/(typeI_error * q ** batch_size + (1 - typeII_error) * (1 - q **batch_size))
+    return p*r/(1 - q** batch_size)
+
+
+def neg_pos_batch_split(subject_df, batch_size, typeII_error, typeI_error):
+    """
+    To Do
+    """
+    neg_batch = pd.DataFrame([], columns = ['subject'], dtype = int)
+    pos_batch = pd.DataFrame([], columns = ['subject'], dtype = int)
+    test_consum = len(list(chunkbatch(subject_df, batch_size)))
+    for temp_batch in list(chunkbatch(subject_df, batch_size)):
+        if 1 in set(temp_batch['subject']):
+            if classification(1, typeII_error, typeI_error) == 1:
+                pos_batch = pos_batch.append(temp_batch)
+            else:
+                neg_batch = neg_batch.append(temp_batch)
+        else:
+            if classification(0, typeII_error, typeI_error) == 0:
+                neg_batch = neg_batch.append(temp_batch)
+            else:
+                pos_batch = pos_batch.append(temp_batch)
+    return (neg_batch, pos_batch, test_consum)    
+
+
+def helpfunction(subject_df, p, batch_size ,typeII_error, typeI_error):
+    
+    """
+    To Do
+    """
+    temp0, temp1, temp_con = neg_pos_batch_split(subject_df,batch_size,typeII_error, typeI_error)
+    p0 = infection_rate_on_negative_batch(p, batch_size, typeII_error, typeI_error)
+    p1 = infection_rate_on_positive_batch(p, batch_size, typeII_error, typeI_error)
+    n0= one_batch_test_int_solver(p0, typeII_error, typeI_error)
+    n1 = one_batch_test_int_solver(p1, typeII_error, typeI_error)
+    return(temp0, temp1, temp_con, p0, p1, n0, n1)
+
+
+def seq_test(subject_df, p, batch_size, typeII_error, typeI_error):
+    """
+    """
+    temp_list = []
+    neg_list = []
+    pos_list = []
+    consum = 0
+    temp = {'data': subject_df,
+           'NB_Num': 0,
+           'PB_Num': 0,
+           'p': p,
+           'batch_size': batch_size}
+    temp_list.append(temp)
+    new_list = []
+    neg_df = pd.DataFrame(columns = ['subject'])
+    pos_df = pd.DataFrame(columns = ['subject'])
+    while len(temp_list) > 0:
+        for i in temp_list:
+            temp0, temp1, temp_con, p0, p1, n0, n1 = helpfunction(i['data'], i['p'], i['batch_size'],
+                                                                            typeII_error = 0.15, typeI_error = 0.01)
+            temp0 = {'data': temp0,
+                    'NB_Num': i['NB_Num'] + 1,
+                    'PB_Num': i['PB_Num'],
+                    'p': p0,
+                    'batch_size': n0}
+            temp1 = {'data': temp1,
+                    'NB_Num': i['NB_Num'],
+                    'PB_Num': i['PB_Num'] + 1,
+                    'p': p1,
+                    'batch_size': n1}
+            if temp0['NB_Num'] >= 3:
+                neg_list.append(temp0)
+            else:
+                new_list.append(temp0)
+            if temp1['PB_Num'] >= 3:
+                pos_list.append(temp1)
+            else:
+                new_list.append(temp1)
+            consum += temp_con 
+        temp_list = new_list
+        new_list = []
+    for i in neg_list:
+        neg_df = neg_df.append(i['data'])
+    for i in pos_list:
+        pos_df = pos_df.append(i['data'])
+        
+    neg_df['subject'] = 0
+    individual_test, individual_con = conventional_test(pos_df['subject'], typeII_error, typeI_error)
+    pos_df['subject'] = individual_test
+    consum += individual_con
+    result = pd.concat([neg_df, pos_df])
+    result.sort_index(inplace = True)
+    return (result, consum, individual_con)
+
+
+def repeat_result(num_repeat,n_pop, p, batch_size, typeII_error, typeI_error):
+    """
+    """
+    accuracy_tab = np.zeros(num_repeat)
+    precision_tab = np.zeros(num_repeat)
+    recall_tab = np.zeros(num_repeat)
+    f1_tab = np.zeros(num_repeat)
+    total_consump = np.zeros(num_repeat)
+    individual_consump = np.zeros(num_repeat)
+    for i in range(num_repeat):
+        subject_df = pd.DataFrame(np.random.binomial(size = n_pop, n = 1,p = p), columns = ['subject'])
+        result, con, temp_con = test(subject_df, p, batch_size, typeII_error, typeI_error)
+        accuracy_tab[i] = np.mean(result == subject_df)
+        precision_tab[i] = precision_score(y_true = subject_df, y_pred = result)
+        recall_tab[i] = recall_score(y_true = subject_df, y_pred = result)
+        f1_tab[i] = f1_score(y_true = subject_df, y_pred = result)
+        total_consump[i] = con
+        individual_consump[i] = temp_con
+    df = pd.DataFrame({'accuracy': accuracy_tab, 
+                   'precision': precision_tab, 
+                   'recall': recall_tab, 
+                   'f1': f1_tab, 
+                   'total_consump': total_consump, 
+                   'individual_consump': individual_consump})
+    return df
