@@ -51,9 +51,8 @@ diseases in general.
 
 ## Code and Notebook
 
-All necessary code is contained in `fast_btk.py`. We have one notebook showing how to run our code and reproduce results
-
-## Ciatation
+All necessary code is contained in `fast_btk.py`. We have one notebook showing how to run our code and reproduce results.
+## Citation
 
 ```
 @misc{ahn2020modeling,
