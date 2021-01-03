@@ -26,6 +26,7 @@ Installation is most easily done by using pip.
 ```bash
 cd <your directory>
 git clone https://github.com/Haoran-Jiang/batchtest_covid19
+cd batchtest_covid19
 pip install --ignore-installed -r requirements.txt
 ```
 
