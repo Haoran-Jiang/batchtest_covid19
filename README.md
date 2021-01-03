@@ -26,7 +26,7 @@ Installation is most easily done by using pip.
 ```bash
 cd <your directory>
 git clone https://github.com/Haoran-Jiang/batchtest_covid19
-pip install -r requirements.txt
+pip install --ignore-installed -r requirements.txt
 ```
 
 You will also need to have software installed to run and execute an iPython Notebook
