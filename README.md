@@ -55,6 +55,7 @@ All necessary code is contained in `fast_btk.py`. We have one notebook showing h
 
 ## Ciatation
 
+```
 @misc{ahn2020modeling,
       title={Modeling and Computation of High Efficiency and Efficacy Multi-Step Batch Testing for Infectious Diseases}, 
       author={Hongshik Ahn and Haoran Jiang and Xiaolin Li},
@@ -63,3 +64,4 @@ All necessary code is contained in `fast_btk.py`. We have one notebook showing h
       archivePrefix={arXiv},
       primaryClass={stat.ME}
 }
+```
