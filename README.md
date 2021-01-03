@@ -54,6 +54,7 @@ diseases in general.
 All necessary code is contained in `fast_btk.py`. We have one notebook showing how to run our code and reproduce results
 
 ## Ciatation
+
 @misc{ahn2020modeling,
       title={Modeling and Computation of High Efficiency and Efficacy Multi-Step Batch Testing for Infectious Diseases}, 
       author={Hongshik Ahn and Haoran Jiang and Xiaolin Li},
