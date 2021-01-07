@@ -2,11 +2,11 @@
 
 This repository explores the techniques developed in:
 >[Modeling and Computation of High Efficiency and Efficacy Multi-Step Batch Testing for Infectious Diseases] (https://arxiv.org/abs/2006.16079)
-Hongshik Ahn, Haoran Jiang, Xiaolin Li
+Hongshik Ahn, Haoran Jiang, and Xiaolin Li
 
 ## Table of Contents
 1. Installation
-2. Project Motivation
+2. Motivation
 3. Code and Notebook
 
 ## Installation
@@ -20,7 +20,7 @@ This project requires **Python 3.x** and the following Python libraries installe
 * scikit-learn
 * Numba
 
-Installation is most easily done by using pip.
+Installation is easily done by using pip.
 1. Create or activate a virtual environment (e.g. using `virtualenv` or `conda`)
 2. Install required packages
 ```bash
@@ -34,7 +34,7 @@ You will also need to have software installed to run and execute an iPython Note
 
 We recommend you install Anaconda, a pre-packaged Python distribution that contains most of the necessary libraies and software for this project.
 
-## Project Motivation
+## Motivation
 
 We propose a mathematical model based on probability theory to optimize COVID-19 testing
 by a multi-step batch testing approach with variable batch sizes. This model and simulation tool
